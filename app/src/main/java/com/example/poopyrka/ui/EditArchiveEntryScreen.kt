@@ -58,16 +58,17 @@ fun EditArchiveEntryScreen(
         } ?: ""
     }
     
+    val isFormValid = count.isNotBlank() && (count.toIntOrNull() ?: 0) > 0 && selectedPoint.isNotBlank()
+    val focusRequester = remember { FocusRequester() }
+
     LaunchedEffect(state) {
         state?.first?.let {
             count = it.count.toString()
             selectedPoint = it.pointName
             selectedGroup = it.deliveryGroup
+            focusRequester.requestFocus()
         }
     }
-
-    val isFormValid = count.isNotBlank() && (count.toIntOrNull() ?: 0) > 0 && selectedPoint.isNotBlank()
-    val focusRequester = remember { FocusRequester() }
 
     Scaffold(
         topBar = {
@@ -147,7 +148,12 @@ fun EditArchiveEntryScreen(
                 onValueChange = {},
                 label = { Text("Дата") },
                 modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = Color.Black,
+                    disabledBorderColor = Color.LightGray,
+                    disabledLabelColor = Color.Gray
+                ),
                 shape = RoundedCornerShape(12.dp)
             )
 

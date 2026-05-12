@@ -32,13 +32,17 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
+fun MainScreen(
+    viewModel: MainViewModel,
+    onNavigateToAddEntry: () -> Unit
+) {
     val uiState by viewModel.uiState.collectAsState()
     
     MainScreenContent(
         uiState = uiState,
         onStartShift = { viewModel.startShift() },
-        onCloseShift = { viewModel.closeShift() }
+        onCloseShift = { viewModel.closeShift() },
+        onAddEntry = onNavigateToAddEntry
     )
 }
 
@@ -47,7 +51,8 @@ fun MainScreen(viewModel: MainViewModel) {
 fun MainScreenContent(
     uiState: MainUiState,
     onStartShift: () -> Unit,
-    onCloseShift: () -> Unit
+    onCloseShift: () -> Unit,
+    onAddEntry: () -> Unit
 ) {
     var showCloseDialog by remember { mutableStateOf(false) }
 
@@ -63,8 +68,10 @@ fun MainScreenContent(
                     )
                 },
                 actions = {
-                    IconButton(onClick = onStartShift) {
-                        Icon(Icons.Default.Add, contentDescription = "Start Shift", tint = MainPurple)
+                    if (uiState.currentShift != null) {
+                        IconButton(onClick = onAddEntry) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Entry", tint = MainPurple)
+                        }
                     }
                 }
             )
@@ -313,7 +320,8 @@ fun MainScreenActivePreview() {
                 isLoading = false
             ),
             onStartShift = {},
-            onCloseShift = {}
+            onCloseShift = {},
+            onAddEntry = {}
         )
     }
 }
@@ -325,7 +333,8 @@ fun MainScreenEmptyPreview() {
         MainScreenContent(
             uiState = MainUiState(currentShift = null, isLoading = false),
             onStartShift = {},
-            onCloseShift = {}
+            onCloseShift = {},
+            onAddEntry = {}
         )
     }
 }

@@ -5,7 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import com.example.poopyrka.ui.MainScreen
+import androidx.navigation.compose.rememberNavController
+import com.example.poopyrka.navigation.NavGraph
 import com.example.poopyrka.ui.MainViewModel
 import com.example.poopyrka.ui.theme.PoopyrkaTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,7 +21,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             PoopyrkaTheme {
-                MainScreen(viewModel = viewModel)
+                val navController = rememberNavController()
+                NavGraph(
+                    navController = navController,
+                    viewModel = viewModel
+                )
             }
         }
     }

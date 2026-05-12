@@ -51,11 +51,11 @@ fun StatisticsScreenContent(
 ) {
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Статистика", fontWeight = FontWeight.Bold) }
+            TopAppBar(
+                title = { Text("Статистика", fontWeight = FontWeight.Medium) }
             )
         },
-        containerColor = BackgroundLight,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
     ) { padding ->
         Column(
@@ -74,17 +74,21 @@ fun StatisticsScreenContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text("Всего за месяц", color = Color.Gray, fontSize = 16.sp)
+            Text(
+                "Всего за месяц",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 16.sp
+            )
             Text(
                 "${statsState.monthlyTotalEarnings.toInt()} BYN",
                 fontSize = 40.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = MainPurple
+                color = MaterialTheme.colorScheme.primary
             )
             Text(
                 "${statsState.monthlyTotalLines} поз.",
                 fontSize = 18.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -117,8 +121,9 @@ fun MonthSelector(
     }
 
     Row(
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         IconButton(
             onClick = { onMonthChange(-1) },
@@ -127,19 +132,20 @@ fun MonthSelector(
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                 contentDescription = "Prev",
-                tint = if (canGoBack) MainPurple else Color.Gray.copy(alpha = 0.3f)
+                tint = if (canGoBack) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
             )
         }
 
         Surface(
-            color = MainPurple,
-            shape = RoundedCornerShape(24.dp)
+            color = MaterialTheme.colorScheme.primary,
+            shape = RoundedCornerShape(100.dp)
         ) {
             Text(
                 text = monthText,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                color = Color.White,
-                fontWeight = FontWeight.Bold
+                modifier = Modifier.padding(horizontal = 32.dp, vertical = 10.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
             )
         }
 
@@ -150,7 +156,7 @@ fun MonthSelector(
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Next",
-                tint = if (canGoForward) MainPurple else Color.Gray.copy(alpha = 0.3f)
+                tint = if (canGoForward) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
             )
         }
     }
@@ -171,7 +177,7 @@ fun DaySummaryItem(
             .shadow(2.dp, RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -188,7 +194,7 @@ fun DaySummaryItem(
                 )
                 Text(
                     text = date.format(dayFormatter).replaceFirstChar { it.uppercase() },
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
             }
@@ -197,17 +203,17 @@ fun DaySummaryItem(
                 Text(
                     text = "${summary.earnings.toInt()} BYN",
                     fontWeight = FontWeight.Bold,
-                    color = MainPurple,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 16.sp
                 )
                 Text(
                     text = "${summary.totalLines} поз.",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
                 Text(
                     text = summary.coeffLabel,
-                    color = MainPurple.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )

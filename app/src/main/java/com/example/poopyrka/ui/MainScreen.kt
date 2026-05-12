@@ -62,25 +62,25 @@ fun MainScreenContent(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
                     Text(
                         "POOPyrka",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MainPurple
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 },
                 actions = {
                     if (uiState.currentShift != null) {
                         IconButton(onClick = onAddEntry) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Entry", tint = MainPurple)
+                            Icon(Icons.Default.Add, contentDescription = "Add Entry", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
             )
         },
-        containerColor = BackgroundLight
+        containerColor = MaterialTheme.colorScheme.surface
     ) { padding ->
         if (uiState.currentShift == null) {
             EmptyState(
@@ -162,78 +162,6 @@ fun MainContent(
                     entry = entry,
                     onClick = { onEntryClick(entry.id) }
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun ShiftSummaryCard(
-    date: Long,
-    earnings: Double,
-    totalLines: Int,
-    onCloseClick: () -> Unit
-) {
-    val formatter = remember {
-        DateTimeFormatter.ofPattern("dd MMMM yyyy\nEEEE", Locale.forLanguageTag("ru"))
-    }
-    val dateText = remember(date) {
-        val dt = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDateTime()
-        dt.format(formatter)
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(24.dp)),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MainPurple)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(20.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text("Смена", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
-                Text(
-                    dateText,
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 22.sp
-                )
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        "${earnings.toInt()} BYN",
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        "$totalLines поз.",
-                        color = Color.White.copy(alpha = 0.8f),
-                        fontSize = 16.sp
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                IconButton(
-                    onClick = onCloseClick,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(Color.White.copy(alpha = 0.2f), CircleShape)
-                ) {
-                    Icon(
-                        Icons.Default.NightlightRound,
-                        contentDescription = "Close Shift",
-                        tint = Color.White
-                    )
-                }
             }
         }
     }

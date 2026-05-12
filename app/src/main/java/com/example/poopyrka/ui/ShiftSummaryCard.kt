@@ -1,5 +1,6 @@
 package com.example.poopyrka.ui
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -23,12 +24,15 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ShiftSummaryCard(
     date: Long,
     earnings: Double,
     totalLines: Int,
     onCloseClick: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier
 ) {
     val formatter = remember {
@@ -39,73 +43,79 @@ fun ShiftSummaryCard(
         dt.format(formatter)
     }
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
+    with(sharedTransitionScope) {
+        Card(
+            modifier = modifier
                 .fillMaxWidth()
+                .shadow(8.dp, RoundedCornerShape(16.dp))
+                .sharedElement(
+                    rememberSharedContentState(key = "shift_card_key"),
+                    animatedVisibilityScope = animatedContentScope
+                ),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text(
-                "Смена",
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
-                style = MaterialTheme.typography.labelLarge
-            )
-            
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
             ) {
-                // Слева: Дата и День недели
-                Column {
-                    val dateParts = dateText.split("\n")
-                    Text(
-                        dateParts[0],
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        dateParts.getOrElse(1) { "" },
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+                Text(
+                    "Смена",
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                    style = MaterialTheme.typography.labelLarge
+                )
 
-                // Справа: Сумма, Позиции и Кнопка
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(horizontalAlignment = Alignment.End) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Слева: Дата и День недели
+                    Column {
+                        val dateParts = dateText.split("\n")
                         Text(
-                            "${earnings.toInt()} BYN",
+                            dateParts[0],
                             color = MaterialTheme.colorScheme.onPrimary,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            "$totalLines поз.",
+                            dateParts.getOrElse(1) { "" },
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    IconButton(
-                        onClick = onCloseClick,
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f), CircleShape)
-                    ) {
-                        Icon(
-                            Icons.Default.NightlightRound,
-                            contentDescription = "Close Shift",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                        )
+
+                    // Справа: Сумма, Позиции и Кнопка
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                "${earnings.toInt()} BYN",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                "$totalLines поз.",
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        IconButton(
+                            onClick = onCloseClick,
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f), CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Default.NightlightRound,
+                                contentDescription = "Close Shift",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        }
                     }
                 }
             }
@@ -113,17 +123,24 @@ fun ShiftSummaryCard(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview(showBackground = true)
 @Composable
 fun ShiftSummaryCardPreview() {
     PoopyrkaTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            ShiftSummaryCard(
-                date = System.currentTimeMillis(),
-                earnings = 150.0,
-                totalLines = 150,
-                onCloseClick = {}
-            )
+        SharedTransitionLayout {
+            AnimatedContent(targetState = true, label = "") { _ ->
+                Box(modifier = Modifier.padding(16.dp)) {
+                    ShiftSummaryCard(
+                        date = System.currentTimeMillis(),
+                        earnings = 150.0,
+                        totalLines = 150,
+                        onCloseClick = {},
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedContentScope = this@AnimatedContent
+                    )
+                }
+            }
         }
     }
 }

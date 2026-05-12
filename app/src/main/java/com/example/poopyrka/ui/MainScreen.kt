@@ -1,5 +1,6 @@
 package com.example.poopyrka.ui
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -49,7 +50,7 @@ fun MainScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun MainScreenContent(
     uiState: MainUiState,
@@ -60,40 +61,55 @@ fun MainScreenContent(
 ) {
     var showCloseDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "POOPyrka",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                },
-                actions = {
-                    if (uiState.currentShift != null) {
-                        IconButton(onClick = onAddEntry) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Entry", tint = MaterialTheme.colorScheme.primary)
+    SharedTransitionLayout {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "POOPyrka",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    actions = {
+                        if (uiState.currentShift != null) {
+                            IconButton(onClick = onAddEntry) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = "Add Entry",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
+                )
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+        ) { padding ->
+            AnimatedContent(
+                targetState = uiState.currentShift == null,
+                label = "MainContentTransition",
+                modifier = Modifier.padding(padding)
+            ) { isShiftNull ->
+                if (isShiftNull) {
+                    EmptyState(
+                        onStartShift = onStartShift,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedContentScope = this@AnimatedContent
+                    )
+                } else {
+                    MainContent(
+                        uiState = uiState,
+                        onCloseShiftClick = { showCloseDialog = true },
+                        onEntryClick = onEntryClick,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedContentScope = this@AnimatedContent
+                    )
                 }
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.surface
-    ) { padding ->
-        if (uiState.currentShift == null) {
-            EmptyState(
-                onStartShift = onStartShift,
-                modifier = Modifier.padding(padding)
-            )
-        } else {
-            MainContent(
-                uiState = uiState,
-                onCloseShiftClick = { showCloseDialog = true },
-                onEntryClick = onEntryClick,
-                modifier = Modifier.padding(padding)
-            )
+            }
         }
     }
 
@@ -119,18 +135,21 @@ fun MainScreenContent(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun MainContent(
     uiState: MainUiState,
     onCloseShiftClick: () -> Unit,
     onEntryClick: (Long) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier
 ) {
     val groupedEntries = uiState.entries.groupBy { it.deliveryGroup }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         item {
@@ -138,7 +157,9 @@ fun MainContent(
                 date = uiState.currentShift?.date ?: 0L,
                 earnings = uiState.totalEarnings,
                 totalLines = uiState.totalLines,
-                onCloseClick = onCloseShiftClick
+                onCloseClick = onCloseShiftClick,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedContentScope = animatedContentScope
             )
         }
 
@@ -223,8 +244,14 @@ fun ShipmentItem(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun EmptyState(onStartShift: () -> Unit, modifier: Modifier = Modifier) {
+fun EmptyState(
+    onStartShift: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -238,18 +265,27 @@ fun EmptyState(onStartShift: () -> Unit, modifier: Modifier = Modifier) {
             lineHeight = 26.sp
         )
         Spacer(modifier = Modifier.height(32.dp))
-        Button(
-            onClick = onStartShift,
-            modifier = Modifier.size(80.dp),
-            shape = CircleShape,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            contentPadding = PaddingValues(0.dp)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Start", modifier = Modifier.size(40.dp))
+
+        with(sharedTransitionScope) {
+            Button(
+                onClick = onStartShift,
+                modifier = Modifier
+                    .size(80.dp)
+                    .sharedElement(
+                        rememberSharedContentState(key = "shift_card_key"),
+                        animatedVisibilityScope = animatedContentScope
+                    ),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Start", modifier = Modifier.size(40.dp))
+            }
         }
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview(showBackground = true)
 @Composable
 fun MainScreenActivePreview() {
@@ -277,6 +313,7 @@ fun MainScreenActivePreview() {
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview(showBackground = true)
 @Composable
 fun MainScreenEmptyPreview() {

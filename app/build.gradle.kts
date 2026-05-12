@@ -24,12 +24,21 @@ android {
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.create("release") {
+                storeFile = file("../release-key.jks")
+                storePassword = "password"
+                keyAlias = "release-key"
+                keyPassword = "password"
+            }
         }
     }
     compileOptions {

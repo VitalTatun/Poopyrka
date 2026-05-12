@@ -55,7 +55,8 @@ fun StatisticsScreenContent(
                 title = { Text("Статистика", fontWeight = FontWeight.Bold) }
             )
         },
-        containerColor = BackgroundLight
+        containerColor = BackgroundLight,
+        contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
     ) { padding ->
         Column(
             modifier = Modifier

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -51,10 +52,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     bottomBar = {
                         if (showBottomBar) {
-                            NavigationBar(
-                                containerColor = Color.White,
-                                tonalElevation = 8.dp
-                            ) {
+                            NavigationBar {
                                 val items = listOf(
                                     Triple(Screen.Main, "Главная", Icons.Default.Star),
                                     Triple(Screen.Statistics, "Статистика", Icons.AutoMirrored.Filled.List)
@@ -75,13 +73,6 @@ class MainActivity : ComponentActivity() {
                                                 restoreState = true
                                             }
                                         },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = Color.White,
-                                            selectedTextColor = MainPurple,
-                                            indicatorColor = MainPurple,
-                                            unselectedIconColor = Color.Gray,
-                                            unselectedTextColor = Color.Gray
-                                        )
                                     )
                                 }
                             }

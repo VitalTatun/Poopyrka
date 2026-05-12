@@ -13,6 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -52,37 +55,34 @@ fun AddEntryScreen(
         focusRequester.requestFocus()
     }
 
+
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Новая отгрузка", fontWeight = FontWeight.Bold) },
+            TopAppBar(
+                title = { Text("Новая отгрузка") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 },
                 actions = {
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(if (isFormValid) MainPurple else Color.LightGray)
-                            .then(
-                                if (isFormValid) {
-                                    Modifier.clickable {
-                                        onSave(selectedPoint, count.toInt(), selectedGroup)
-                                    }
-                                } else Modifier
-                            ),
-                        contentAlignment = Alignment.Center
+                    FilledIconButton(
+                        onClick = { onSave(selectedPoint, count.toInt(), selectedGroup) },
+                        enabled = isFormValid,
+                        modifier = Modifier.padding(end = 0.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Сохранить", tint = Color.White)
+                        Icon(Icons.Default.Check, contentDescription = "Сохранить")
                     }
                 }
             )
         },
-        containerColor = BackgroundLight
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -90,7 +90,7 @@ fun AddEntryScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Поле Дата
             OutlinedTextField(
@@ -99,7 +99,11 @@ fun AddEntryScreen(
                 label = { Text("Дата") },
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
             )
 
             // Поле Количество
@@ -112,40 +116,56 @@ fun AddEntryScreen(
                     .focusRequester(focusRequester),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
             )
 
             // Направления
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Направление", fontWeight = FontWeight.SemiBold, color = Color.Gray)
+                Text(
+                    "Направление",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     points.forEach { point ->
                         val isSelected = selectedPoint == point
-                        Surface(
+                        FilterChip(
+                            selected = isSelected,
                             onClick = { selectedPoint = point },
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) MainPurple else Color.White,
-                            border = if (isSelected) null else BorderStroke(1.dp, Color.LightGray),
-                            tonalElevation = 2.dp
-                        ) {
-                            Text(
-                                text = point,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                color = if (isSelected) Color.White else Color.Black,
-                                fontSize = 14.sp
+                            label = { Text(point) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                borderColor = MaterialTheme.colorScheme.outline,
+                                selectedBorderColor = Color.Transparent
                             )
-                        }
+                        )
                     }
                 }
             }
 
             // Номер отгрузки
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Номер отгрузки", fontWeight = FontWeight.SemiBold, color = Color.Gray)
+                Text(
+                    "Номер отгрузки",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     listOf(1, 2, 3).forEach { group ->
                         val isSelected = selectedGroup == group
@@ -153,14 +173,22 @@ fun AddEntryScreen(
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(CircleShape)
-                                .background(if (isSelected) MainPurple else Color.White)
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primary 
+                                    else MaterialTheme.colorScheme.surface
+                                )
                                 .clickable { selectedGroup = group }
-                                .then(if (isSelected) Modifier else Modifier.border(1.dp, Color.LightGray, CircleShape)),
+                                .then(
+                                    if (isSelected) Modifier 
+                                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = group.toString(),
-                                color = if (isSelected) Color.White else Color.Black,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary 
+                                        else MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                         }

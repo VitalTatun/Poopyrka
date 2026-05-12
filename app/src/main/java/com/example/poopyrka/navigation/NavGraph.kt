@@ -25,7 +25,10 @@ fun NavGraph(
         composable(Screen.Main.route) {
             MainScreen(
                 viewModel = viewModel,
-                onNavigateToAddEntry = { navController.navigate(Screen.AddEntry.route) }
+                onNavigateToAddEntry = { navController.navigate(Screen.AddEntry.route) },
+                onNavigateToEditEntry = { entryId ->
+                    navController.navigate(Screen.EditEntry.createRoute(entryId))
+                }
             )
         }
         composable(Screen.AddEntry.route) {

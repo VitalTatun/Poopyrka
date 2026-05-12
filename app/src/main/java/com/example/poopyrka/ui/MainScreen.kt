@@ -35,7 +35,8 @@ import java.util.*
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
-    onNavigateToAddEntry: () -> Unit
+    onNavigateToAddEntry: () -> Unit,
+    onNavigateToEditEntry: (Long) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
@@ -43,7 +44,8 @@ fun MainScreen(
         uiState = uiState,
         onStartShift = { viewModel.startShift() },
         onCloseShift = { viewModel.closeShift() },
-        onAddEntry = onNavigateToAddEntry
+        onAddEntry = onNavigateToAddEntry,
+        onEntryClick = onNavigateToEditEntry
     )
 }
 
@@ -53,7 +55,8 @@ fun MainScreenContent(
     uiState: MainUiState,
     onStartShift: () -> Unit,
     onCloseShift: () -> Unit,
-    onAddEntry: () -> Unit
+    onAddEntry: () -> Unit,
+    onEntryClick: (Long) -> Unit
 ) {
     var showCloseDialog by remember { mutableStateOf(false) }
 
@@ -88,6 +91,7 @@ fun MainScreenContent(
             MainContent(
                 uiState = uiState,
                 onCloseShiftClick = { showCloseDialog = true },
+                onEntryClick = onEntryClick,
                 modifier = Modifier.padding(padding)
             )
         }
@@ -119,6 +123,7 @@ fun MainScreenContent(
 fun MainContent(
     uiState: MainUiState,
     onCloseShiftClick: () -> Unit,
+    onEntryClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val groupedEntries = uiState.entries.groupBy { it.deliveryGroup }
@@ -153,7 +158,10 @@ fun MainContent(
                 )
             }
             items(entries) { entry ->
-                ShipmentItem(entry)
+                ShipmentItem(
+                    entry = entry,
+                    onClick = { onEntryClick(entry.id) }
+                )
             }
         }
     }
@@ -323,7 +331,8 @@ fun MainScreenActivePreview() {
             ),
             onStartShift = {},
             onCloseShift = {},
-            onAddEntry = {}
+            onAddEntry = {},
+            onEntryClick = {}
         )
     }
 }
@@ -336,7 +345,8 @@ fun MainScreenEmptyPreview() {
             uiState = MainUiState(currentShift = null, isLoading = false),
             onStartShift = {},
             onCloseShift = {},
-            onAddEntry = {}
+            onAddEntry = {},
+            onEntryClick = {}
         )
     }
 }

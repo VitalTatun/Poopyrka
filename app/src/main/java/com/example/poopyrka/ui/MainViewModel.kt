@@ -61,13 +61,11 @@ class MainViewModel @Inject constructor(
         }
 
         val daySummaries = filteredShifts.map { shift ->
-            val entries = allEntries.filter { it.shiftId == shift.id }
-            val totalLines = entries.sumOf { it.count }
             DaySummary(
                 shift = shift,
-                totalLines = totalLines,
-                earnings = calculator.calculate(totalLines),
-                coeffLabel = calculator.getCoeffLabel(totalLines)
+                totalLines = shift.totalLines,
+                earnings = shift.totalEarnings,
+                coeffLabel = calculator.getCoeffLabel(shift.totalLines)
             )
         }
 
@@ -92,15 +90,28 @@ class MainViewModel @Inject constructor(
         val shift = dao.getShiftById(shiftId)
         if (shift != null) {
             dao.getEntriesForShift(shiftId).collect { entries ->
-                val totalLines = entries.sumOf { it.count }
                 emit(MainUiState(
                     currentShift = shift,
                     entries = entries,
-                    totalLines = totalLines,
-                    totalEarnings = calculator.calculate(totalLines),
+                    totalLines = shift.totalLines,
+                    totalEarnings = shift.totalEarnings,
                     isLoading = false
                 ))
             }
+        }
+    }
+
+    fun getEntry(id: Long): Flow<Pair<ShipmentEntry, WorkShift>?> = flow {
+        val entry = dao.getEntryById(id)
+        if (entry != null) {
+            val shift = dao.getShiftById(entry.shiftId)
+            if (shift != null) {
+                emit(entry to shift)
+            } else {
+                emit(null)
+            }
+        } else {
+            emit(null)
         }
     }
 
@@ -113,7 +124,9 @@ class MainViewModel @Inject constructor(
     fun closeShift() {
         val currentShift = uiState.value.currentShift ?: return
         viewModelScope.launch {
-            dao.upsertShift(currentShift.copy(isClosed = true))
+            updateShiftTotals(currentShift.id)
+            val updatedShift = dao.getShiftById(currentShift.id) ?: currentShift
+            dao.upsertShift(updatedShift.copy(isClosed = true))
         }
     }
 
@@ -128,12 +141,41 @@ class MainViewModel @Inject constructor(
                     deliveryGroup = deliveryGroup
                 )
             )
+            updateShiftTotals(shiftId)
+        }
+    }
+
+    fun updateEntry(entry: ShipmentEntry) {
+        viewModelScope.launch {
+            dao.upsertEntry(entry)
+            updateShiftTotals(entry.shiftId)
         }
     }
 
     fun deleteEntry(entry: ShipmentEntry) {
         viewModelScope.launch {
             dao.deleteEntry(entry)
+            updateShiftTotals(entry.shiftId)
         }
+    }
+
+    fun deleteEntryById(entryId: Long) {
+        viewModelScope.launch {
+            val entry = dao.getEntryById(entryId) ?: return@launch
+            dao.deleteEntry(entry)
+            updateShiftTotals(entry.shiftId)
+        }
+    }
+
+    private suspend fun updateShiftTotals(shiftId: Long) {
+        val shift = dao.getShiftById(shiftId) ?: return
+        val entries = dao.getEntriesForShiftSync(shiftId)
+        val totalLines = entries.sumOf { it.count }
+        val totalEarnings = calculator.calculate(totalLines)
+        
+        dao.upsertShift(shift.copy(
+            totalLines = totalLines,
+            totalEarnings = totalEarnings
+        ))
     }
 }

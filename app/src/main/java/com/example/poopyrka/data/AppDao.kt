@@ -14,6 +14,12 @@ interface AppDao {
     @Query("SELECT * FROM shipment_entries WHERE shiftId = :shiftId")
     fun getEntriesForShift(shiftId: Long): Flow<List<ShipmentEntry>>
 
+    @Query("SELECT * FROM shipment_entries WHERE shiftId = :shiftId")
+    suspend fun getEntriesForShiftSync(shiftId: Long): List<ShipmentEntry>
+
+    @Query("SELECT * FROM shipment_entries WHERE id = :id")
+    suspend fun getEntryById(id: Long): ShipmentEntry?
+
     @Query("SELECT * FROM work_shifts WHERE isClosed = 1 ORDER BY date DESC")
     fun getClosedShifts(): Flow<List<WorkShift>>
 

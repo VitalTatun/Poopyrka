@@ -7,5 +7,7 @@ import androidx.room.PrimaryKey
 data class WorkShift(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val date: Long,
-    val isClosed: Boolean = false
+    val isClosed: Boolean = false,
+    val totalEarnings: Double = 0.0,
+    val totalLines: Int = 0
 )

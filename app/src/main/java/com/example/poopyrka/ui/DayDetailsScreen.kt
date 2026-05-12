@@ -25,7 +25,8 @@ import java.util.*
 fun DayDetailsScreen(
     shiftId: Long,
     viewModel: MainViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToEditEntry: (Long) -> Unit
 ) {
     val dayState by viewModel.getDayDetails(shiftId).collectAsState(initial = MainUiState())
 
@@ -116,7 +117,10 @@ fun DayDetailsScreen(
                             )
                         }
                         items(entries) { entry ->
-                            ShipmentItem(entry)
+                            ShipmentItem(
+                                entry = entry,
+                                onClick = { onNavigateToEditEntry(entry.id) }
+                            )
                         }
                     }
                 }

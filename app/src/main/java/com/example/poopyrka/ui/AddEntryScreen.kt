@@ -39,12 +39,14 @@ fun AddEntryScreen(
     onSave: (String, Int, Int) -> Unit
 ) {
     var count by remember { mutableStateOf("") }
-    var selectedPoint by remember { mutableStateOf("WB Палома") }
+    var selectedPoint by remember { mutableStateOf("") }
     var selectedGroup by remember { mutableIntStateOf(1) }
     
     val points = listOf("WB Палома", "WB ЕСЦ", "Ozon Палома", "Ozon ЕСЦ", "EMall", "FBO WB", "FBO Ozon")
     val focusRequester = remember { FocusRequester() }
     val today = remember { LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")) }
+    
+    val isFormValid = count.isNotBlank() && (count.toIntOrNull() ?: 0) > 0 && selectedPoint.isNotBlank()
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -65,13 +67,14 @@ fun AddEntryScreen(
                             .padding(end = 8.dp)
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(MainPurple)
-                            .clickable {
-                                val countInt = count.toIntOrNull() ?: 0
-                                if (countInt > 0) {
-                                    onSave(selectedPoint, countInt, selectedGroup)
-                                }
-                            },
+                            .background(if (isFormValid) MainPurple else Color.LightGray)
+                            .then(
+                                if (isFormValid) {
+                                    Modifier.clickable {
+                                        onSave(selectedPoint, count.toInt(), selectedGroup)
+                                    }
+                                } else Modifier
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.Check, contentDescription = "Сохранить", tint = Color.White)

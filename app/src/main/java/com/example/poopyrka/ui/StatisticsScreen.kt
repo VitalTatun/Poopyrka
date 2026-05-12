@@ -1,11 +1,9 @@
 package com.example.poopyrka.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -17,17 +15,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.poopyrka.data.WorkShift
 import com.example.poopyrka.ui.theme.MainPurple
 import com.example.poopyrka.ui.theme.BackgroundLight
+import com.example.poopyrka.ui.theme.PoopyrkaTheme
 import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsScreen(
     viewModel: MainViewModel,
@@ -35,6 +35,20 @@ fun StatisticsScreen(
 ) {
     val statsState by viewModel.statsState.collectAsState()
 
+    StatisticsScreenContent(
+        statsState = statsState,
+        onMonthChange = { viewModel.changeMonth(it) },
+        onNavigateToDetails = onNavigateToDetails
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StatisticsScreenContent(
+    statsState: StatisticsUiState,
+    onMonthChange: (Int) -> Unit,
+    onNavigateToDetails: (Long) -> Unit
+) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -52,7 +66,7 @@ fun StatisticsScreen(
         ) {
             MonthSelector(
                 selectedMonth = statsState.selectedMonth,
-                onMonthChange = { viewModel.changeMonth(it) }
+                onMonthChange = onMonthChange
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -92,7 +106,7 @@ fun MonthSelector(
     selectedMonth: YearMonth,
     onMonthChange: (Int) -> Unit
 ) {
-    val formatter = remember { DateTimeFormatter.ofPattern("MMMM yyyy", Locale("ru")) }
+    val formatter = remember { DateTimeFormatter.ofPattern("MMMM yyyy", Locale.forLanguageTag("ru")) }
     val monthText = remember(selectedMonth) {
         selectedMonth.format(formatter).replaceFirstChar { it.uppercase() }
     }
@@ -129,8 +143,8 @@ fun DaySummaryItem(
     onClick: () -> Unit
 ) {
     val date = Instant.ofEpochMilli(summary.shift.date).atZone(ZoneId.systemDefault()).toLocalDate()
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale("ru")) }
-    val dayFormatter = remember { DateTimeFormatter.ofPattern("EEEE", Locale("ru")) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.forLanguageTag("ru")) }
+    val dayFormatter = remember { DateTimeFormatter.ofPattern("EEEE", Locale.forLanguageTag("ru")) }
 
     Card(
         modifier = Modifier
@@ -180,5 +194,29 @@ fun DaySummaryItem(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun StatisticsScreenPreview() {
+    PoopyrkaTheme {
+        StatisticsScreenContent(
+            statsState = StatisticsUiState(
+                selectedMonth = YearMonth.of(2026, 5),
+                daySummaries = listOf(
+                    DaySummary(WorkShift(1, 1777939200000, true), 105, 105.0, "Коэф 1.0"),
+                    DaySummary(WorkShift(2, 1778025600000, true), 105, 105.0, "Коэф 1.0"),
+                    DaySummary(WorkShift(3, 1778112000000, true), 105, 105.0, "Коэф 1.0"),
+                    DaySummary(WorkShift(4, 1778371200000, true), 105, 105.0, "Коэф 1.0"),
+                    DaySummary(WorkShift(5, 1778457600000, true), 105, 105.0, "Коэф 1.0"),
+                ),
+                monthlyTotalEarnings = 709.0,
+                monthlyTotalLines = 709,
+                isLoading = false
+            ),
+            onMonthChange = {},
+            onNavigateToDetails = {}
+        )
     }
 }

@@ -18,4 +18,8 @@ object EarningsCalculator {
         val reducedPart = max(0, totalLines - THRESHOLD_LINES) * COEFF_REDUCED
         return basePart + reducedPart
     }
+
+    fun getCoeffLabel(totalLines: Int): String {
+        return if (totalLines > THRESHOLD_LINES) "Коэф 0.8" else "Коэф 1.0"
+    }
 }

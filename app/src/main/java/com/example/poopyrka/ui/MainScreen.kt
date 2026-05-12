@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -24,8 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.poopyrka.data.ShipmentEntry
 import com.example.poopyrka.data.WorkShift
-import com.example.poopyrka.ui.theme.MainPurple
-import com.example.poopyrka.ui.theme.BackgroundLight
 import com.example.poopyrka.ui.theme.PoopyrkaTheme
 import java.time.Instant
 import java.time.ZoneId
@@ -131,7 +131,7 @@ fun MainContent(
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         item {
             ShiftSummaryCard(
@@ -151,61 +151,73 @@ fun MainContent(
                         3 -> "Третья отгрузка"
                         else -> "$group отгрузка"
                     },
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4A4A4A)
+                    fontWeight = FontWeight.Medium
                 )
             }
-            items(entries) { entry ->
-                ShipmentItem(
-                    entry = entry,
-                    onClick = { onEntryClick(entry.id) }
-                )
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp)),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    entries.forEachIndexed { index, entry ->
+                        val shape = when {
+                            entries.size == 1 -> RoundedCornerShape(16.dp)
+                            index == 0 -> RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+                            index == entries.size - 1 -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
+                            else -> RoundedCornerShape(4.dp)
+                        }
+                        ShipmentItem(
+                            entry = entry,
+                            shape = shape,
+                            onClick = { onEntryClick(entry.id) }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun ShipmentItem(entry: ShipmentEntry, onClick: (() -> Unit)? = null) {
-    Card(
+fun ShipmentItem(
+    entry: ShipmentEntry,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(16.dp),
+    onClick: (() -> Unit)? = null
+) {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(2.dp, RoundedCornerShape(16.dp))
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                Icons.Default.FiberManualRecord,
-                contentDescription = null,
-                tint = MainPurple,
-                modifier = Modifier.size(12.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = entry.pointName,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )
             Text(
                 text = "${entry.count} поз.",
-                color = Color.Gray,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
             Text(
                 text = "${(entry.count * 1.0).toInt()} BYN",
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -221,7 +233,7 @@ fun EmptyState(onStartShift: () -> Unit, modifier: Modifier = Modifier) {
         Text(
             text = "Ничего не упаковано,\nничего не отправлено...\nГрошай няма\nСитуация патовая...",
             textAlign = TextAlign.Center,
-            color = MainPurple.copy(alpha = 0.6f),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
             fontSize = 18.sp,
             lineHeight = 26.sp
         )
@@ -230,7 +242,7 @@ fun EmptyState(onStartShift: () -> Unit, modifier: Modifier = Modifier) {
             onClick = onStartShift,
             modifier = Modifier.size(80.dp),
             shape = CircleShape,
-            colors = ButtonDefaults.buttonColors(containerColor = MainPurple),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             contentPadding = PaddingValues(0.dp)
         ) {
             Icon(Icons.Default.Add, contentDescription = "Start", modifier = Modifier.size(40.dp))

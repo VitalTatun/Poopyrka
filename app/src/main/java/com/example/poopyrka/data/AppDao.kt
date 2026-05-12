@@ -29,6 +29,9 @@ interface AppDao {
     @Query("SELECT * FROM shipment_entries")
     fun getAllEntries(): Flow<List<ShipmentEntry>>
 
+    @Query("SELECT MIN(date) FROM work_shifts")
+    fun getFirstShiftDate(): Flow<Long?>
+
     @Upsert
     suspend fun upsertShift(shift: WorkShift): Long
 

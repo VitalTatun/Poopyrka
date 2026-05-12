@@ -53,8 +53,9 @@ class MainViewModel @Inject constructor(
     val statsState: StateFlow<StatisticsUiState> = combine(
         dao.getClosedShifts(),
         dao.getAllEntries(),
+        dao.getFirstShiftDate(),
         _selectedMonth
-    ) { shifts, allEntries, month ->
+    ) { shifts, allEntries, firstShiftDate, month ->
         val filteredShifts = shifts.filter {
             val date = Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate()
             YearMonth.from(date) == month
@@ -69,12 +70,21 @@ class MainViewModel @Inject constructor(
             )
         }
 
+        val firstMonth = if (firstShiftDate != null) {
+            YearMonth.from(Instant.ofEpochMilli(firstShiftDate).atZone(ZoneId.systemDefault()).toLocalDate())
+        } else {
+            YearMonth.now()
+        }
+        val currentMonth = YearMonth.now()
+
         StatisticsUiState(
             selectedMonth = month,
             daySummaries = daySummaries,
             monthlyTotalEarnings = daySummaries.sumOf { it.earnings },
             monthlyTotalLines = daySummaries.sumOf { it.totalLines },
-            isLoading = false
+            isLoading = false,
+            canGoBack = month.isAfter(firstMonth),
+            canGoForward = month.isBefore(currentMonth)
         )
     }.stateIn(
         scope = viewModelScope,

@@ -8,7 +8,9 @@ data class StatisticsUiState(
     val daySummaries: List<DaySummary> = emptyList(),
     val monthlyTotalEarnings: Double = 0.0,
     val monthlyTotalLines: Int = 0,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val canGoBack: Boolean = true,
+    val canGoForward: Boolean = false
 )
 
 data class DaySummary(

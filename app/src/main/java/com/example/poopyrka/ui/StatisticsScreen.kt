@@ -66,6 +66,8 @@ fun StatisticsScreenContent(
         ) {
             MonthSelector(
                 selectedMonth = statsState.selectedMonth,
+                canGoBack = statsState.canGoBack,
+                canGoForward = statsState.canGoForward,
                 onMonthChange = onMonthChange
             )
 
@@ -104,6 +106,8 @@ fun StatisticsScreenContent(
 @Composable
 fun MonthSelector(
     selectedMonth: YearMonth,
+    canGoBack: Boolean,
+    canGoForward: Boolean,
     onMonthChange: (Int) -> Unit
 ) {
     val formatter = remember { DateTimeFormatter.ofPattern("MMMM yyyy", Locale.forLanguageTag("ru")) }
@@ -115,8 +119,15 @@ fun MonthSelector(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        IconButton(onClick = { onMonthChange(-1) }) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Prev", tint = MainPurple)
+        IconButton(
+            onClick = { onMonthChange(-1) },
+            enabled = canGoBack
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Prev",
+                tint = if (canGoBack) MainPurple else Color.Gray.copy(alpha = 0.3f)
+            )
         }
 
         Surface(
@@ -131,8 +142,15 @@ fun MonthSelector(
             )
         }
 
-        IconButton(onClick = { onMonthChange(1) }) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next", tint = MainPurple)
+        IconButton(
+            onClick = { onMonthChange(1) },
+            enabled = canGoForward
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Next",
+                tint = if (canGoForward) MainPurple else Color.Gray.copy(alpha = 0.3f)
+            )
         }
     }
 }
@@ -213,7 +231,9 @@ fun StatisticsScreenPreview() {
                 ),
                 monthlyTotalEarnings = 709.0,
                 monthlyTotalLines = 709,
-                isLoading = false
+                isLoading = false,
+                canGoBack = true,
+                canGoForward = false
             ),
             onMonthChange = {},
             onNavigateToDetails = {}

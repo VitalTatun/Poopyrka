@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,13 +41,33 @@ fun MainScreen(
     onNavigateToEditEntry: (Long) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
+    val snackbarHostState = remember { SnackbarHostState() }
+    val clipboardManager = LocalClipboardManager.current
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is MainViewModel.UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
+
     MainScreenContent(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onStartShift = { viewModel.startShift() },
         onCloseShift = { viewModel.closeShift() },
         onAddEntry = onNavigateToAddEntry,
-        onEntryClick = onNavigateToEditEntry
+        onEntryClick = onNavigateToEditEntry,
+        onImportShift = {
+            val text = clipboardManager.getText()?.text
+            if (text != null) {
+                viewModel.importFullShift(text)
+            }
+        },
+        onDateChange = { viewModel.updateShiftDate(it) }
     )
 }
 
@@ -54,12 +75,19 @@ fun MainScreen(
 @Composable
 fun MainScreenContent(
     uiState: MainUiState,
+    snackbarHostState: SnackbarHostState,
     onStartShift: () -> Unit,
     onCloseShift: () -> Unit,
     onAddEntry: () -> Unit,
-    onEntryClick: (Long) -> Unit
+    onEntryClick: (Long) -> Unit,
+    onImportShift: () -> Unit,
+    onDateChange: (Long) -> Unit
 ) {
     var showCloseDialog by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = uiState.currentShift?.date
+    )
 
     SharedTransitionLayout {
         Scaffold(
@@ -86,6 +114,7 @@ fun MainScreenContent(
                     }
                 )
             },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             containerColor = MaterialTheme.colorScheme.surface,
             contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
         ) { padding ->
@@ -104,12 +133,36 @@ fun MainScreenContent(
                     MainContent(
                         uiState = uiState,
                         onCloseShiftClick = { showCloseDialog = true },
+                        onImportClick = onImportShift,
+                        onDateClick = { showDatePicker = true },
                         onEntryClick = onEntryClick,
+                        isCloseEnabled = uiState.entries.isNotEmpty(),
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedContentScope = this@AnimatedContent
                     )
                 }
             }
+        }
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { onDateChange(it) }
+                    showDatePicker = false
+                }) {
+                    Text("ОК")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Отмена")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 
@@ -140,7 +193,10 @@ fun MainScreenContent(
 fun MainContent(
     uiState: MainUiState,
     onCloseShiftClick: () -> Unit,
+    onImportClick: () -> Unit,
+    onDateClick: () -> Unit,
     onEntryClick: (Long) -> Unit,
+    isCloseEnabled: Boolean,
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier
@@ -158,6 +214,9 @@ fun MainContent(
                 earnings = uiState.totalEarnings,
                 totalLines = uiState.totalLines,
                 onCloseClick = onCloseShiftClick,
+                onImportClick = onImportClick,
+                onDateClick = onDateClick,
+                isCloseEnabled = isCloseEnabled,
                 sharedTransitionScope = sharedTransitionScope,
                 animatedContentScope = animatedContentScope
             )
@@ -305,10 +364,13 @@ fun MainScreenActivePreview() {
                 totalEarnings = 150.0,
                 isLoading = false
             ),
+            snackbarHostState = remember { SnackbarHostState() },
             onStartShift = {},
             onCloseShift = {},
             onAddEntry = {},
-            onEntryClick = {}
+            onEntryClick = {},
+            onImportShift = {},
+            onDateChange = {}
         )
     }
 }
@@ -320,10 +382,13 @@ fun MainScreenEmptyPreview() {
     PoopyrkaTheme {
         MainScreenContent(
             uiState = MainUiState(currentShift = null, isLoading = false),
+            snackbarHostState = remember { SnackbarHostState() },
             onStartShift = {},
             onCloseShift = {},
             onAddEntry = {},
-            onEntryClick = {}
+            onEntryClick = {},
+            onImportShift = {},
+            onDateChange = {}
         )
     }
 }

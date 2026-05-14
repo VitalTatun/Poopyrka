@@ -8,6 +8,7 @@ import com.example.poopyrka.data.ShipmentEntry
 import com.example.poopyrka.data.WorkShift
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -21,6 +22,13 @@ class MainViewModel @Inject constructor(
     private val dao: AppDao,
     private val calculator: EarningsCalculator
 ) : ViewModel() {
+
+    private val _events = Channel<UiEvent>()
+    val events = _events.receiveAsFlow()
+
+    sealed class UiEvent {
+        data class ShowSnackbar(val message: String) : UiEvent()
+    }
 
     // Main Screen State
     val uiState: StateFlow<MainUiState> = dao.getCurrentOpenShift()
@@ -174,6 +182,64 @@ class MainViewModel @Inject constructor(
             val entry = dao.getEntryById(entryId) ?: return@launch
             dao.deleteEntry(entry)
             updateShiftTotals(entry.shiftId)
+        }
+    }
+
+    fun importFullShift(text: String) {
+        val shiftId = uiState.value.currentShift?.id ?: return
+        val lines = text.lines()
+        val entries = mutableListOf<ShipmentEntry>()
+        var currentGroup = 1
+
+        val regex = Regex("""(.+?)\s*[:\-\s|]\s*(\d+)""")
+
+        lines.forEach { line ->
+            val trimmed = line.trim()
+            when {
+                trimmed.contains("Первая", ignoreCase = true) -> currentGroup = 1
+                trimmed.contains("Вторая", ignoreCase = true) -> currentGroup = 2
+                trimmed.contains("Третья", ignoreCase = true) -> currentGroup = 3
+                else -> {
+                    regex.find(trimmed)?.let { match ->
+                        val name = match.groupValues[1].trim()
+                        val count = match.groupValues[2].toIntOrNull() ?: 0
+                        if (name.isNotEmpty() && count > 0) {
+                            entries.add(
+                                ShipmentEntry(
+                                    shiftId = shiftId,
+                                    pointName = name,
+                                    count = count,
+                                    deliveryGroup = currentGroup
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            if (entries.isEmpty()) {
+                _events.send(UiEvent.ShowSnackbar("Ошибка формата! Используйте заголовки групп и строки вида 'Направление - Количество'"))
+            } else {
+                dao.upsertEntries(entries)
+                updateShiftTotals(shiftId)
+                _events.send(UiEvent.ShowSnackbar("Смена импортирована: добавлено ${entries.size} записей"))
+            }
+        }
+    }
+
+    fun updateShiftDate(dateMillis: Long) {
+        val currentShift = uiState.value.currentShift ?: return
+        viewModelScope.launch {
+            dao.upsertShift(currentShift.copy(date = dateMillis))
+        }
+    }
+
+    fun deleteShift(shiftId: Long) {
+        viewModelScope.launch {
+            val shift = dao.getShiftById(shiftId) ?: return@launch
+            dao.deleteShift(shift)
         }
     }
 

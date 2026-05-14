@@ -38,6 +38,12 @@ interface AppDao {
     @Upsert
     suspend fun upsertEntry(entry: ShipmentEntry)
 
+    @Upsert
+    suspend fun upsertEntries(entries: List<ShipmentEntry>)
+
     @Delete
     suspend fun deleteEntry(entry: ShipmentEntry)
+
+    @Delete
+    suspend fun deleteShift(shift: WorkShift)
 }

@@ -2,16 +2,19 @@ package com.example.poopyrka.ui
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.NightlightRound
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +34,9 @@ fun ShiftSummaryCard(
     earnings: Double,
     totalLines: Int,
     onCloseClick: () -> Unit,
+    onImportClick: () -> Unit,
+    onDateClick: () -> Unit,
+    isCloseEnabled: Boolean,
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier
@@ -74,7 +80,12 @@ fun ShiftSummaryCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Слева: Дата и День недели
-                    Column {
+                    Column(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onDateClick)
+                            .padding(vertical = 4.dp, horizontal = 8.dp)
+                    ) {
                         val dateParts = dateText.split("\n")
                         Text(
                             dateParts[0],
@@ -106,14 +117,30 @@ fun ShiftSummaryCard(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         IconButton(
-                            onClick = onCloseClick,
+                            onClick = onImportClick,
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f), CircleShape)
                         ) {
                             Icon(
+                                Icons.Default.ContentPaste,
+                                contentDescription = "Import Shift",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = onCloseClick,
+                            enabled = isCloseEnabled,
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = if (isCloseEnabled) 0.2f else 0.05f),
+                                    CircleShape
+                                )
+                        ) {
+                            Icon(
                                 Icons.Default.NightlightRound,
                                 contentDescription = "Close Shift",
-                                tint = MaterialTheme.colorScheme.onPrimary,
+                                tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = if (isCloseEnabled) 1f else 0.4f),
                             )
                         }
                     }
@@ -136,6 +163,9 @@ fun ShiftSummaryCardPreview() {
                         earnings = 150.0,
                         totalLines = 150,
                         onCloseClick = {},
+                        onImportClick = {},
+                        onDateClick = {},
+                        isCloseEnabled = true,
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedContentScope = this@AnimatedContent
                     )

@@ -1,8 +1,8 @@
 package com.example.poopyrka.ui
 
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,7 +13,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,16 +27,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.poopyrka.data.ShipmentEntry
-import com.example.poopyrka.ui.theme.MainPurple
-import com.example.poopyrka.ui.theme.BackgroundLight
 import com.example.poopyrka.ui.theme.PoopyrkaTheme
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun EditArchiveEntryScreen(
     entryId: Long,
@@ -51,10 +45,10 @@ fun EditArchiveEntryScreen(
     var selectedPoint by remember { mutableStateOf("") }
     var selectedGroup by remember { mutableIntStateOf(1) }
     
-    val dateText = remember(state) {
+    val displayDate = remember(state) {
         state?.second?.let {
-            val dt = Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDateTime()
-            dt.format(DateTimeFormatter.ofPattern("dd MMMM yyyy, EEEE", java.util.Locale.forLanguageTag("ru")))
+            val dt = Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate()
+            dt.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
         } ?: ""
     }
     
@@ -63,67 +57,89 @@ fun EditArchiveEntryScreen(
 
     LaunchedEffect(state) {
         state?.first?.let {
-            count = it.count.toString()
-            selectedPoint = it.pointName
+            if (count.isEmpty()) count = it.count.toString()
+            if (selectedPoint.isEmpty()) selectedPoint = it.pointName
             selectedGroup = it.deliveryGroup
-            focusRequester.requestFocus()
         }
     }
 
+    EditArchiveEntryContent(
+        count = count,
+        onCountChange = { if (it.all { char -> char.isDigit() }) count = it },
+        selectedPoint = selectedPoint,
+        onPointSelect = { selectedPoint = it },
+        selectedGroup = selectedGroup,
+        onGroupSelect = { selectedGroup = it },
+        displayDate = displayDate,
+        isFormValid = isFormValid,
+        focusRequester = focusRequester,
+        onBack = onBack,
+        onDelete = {
+            viewModel.deleteEntryById(entryId)
+            Toast.makeText(context, "Запись удалена", Toast.LENGTH_SHORT).show()
+            onBack()
+        },
+        onSave = {
+            state?.first?.let {
+                viewModel.updateEntry(it.copy(
+                    pointName = selectedPoint,
+                    count = count.toInt(),
+                    deliveryGroup = selectedGroup
+                ))
+                Toast.makeText(context, "Данные обновлены", Toast.LENGTH_SHORT).show()
+                onBack()
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun EditArchiveEntryContent(
+    count: String,
+    onCountChange: (String) -> Unit,
+    selectedPoint: String,
+    onPointSelect: (String) -> Unit,
+    selectedGroup: Int,
+    onGroupSelect: (Int) -> Unit,
+    displayDate: String,
+    isFormValid: Boolean,
+    focusRequester: FocusRequester,
+    onBack: () -> Unit,
+    onDelete: () -> Unit,
+    onSave: () -> Unit
+) {
+    val points = listOf("WB Палома", "WB ЕСЦ", "Ozon Палома", "Ozon ЕСЦ", "EMall", "FBO WB", "FBO Ozon")
+
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Редактирование", fontWeight = FontWeight.Bold)
-                        if (dateText.isNotEmpty()) {
-                            Text(dateText, fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Normal)
-                        }
-                    }
-                },
+            TopAppBar(
+                title = { Text("Редактирование", fontWeight = FontWeight.Medium) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        viewModel.deleteEntryById(entryId)
-                        Toast.makeText(context, "Запись удалена, итог смены пересчитан", Toast.LENGTH_SHORT).show()
-                        onBack()
-                    }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Удалить", tint = Color.Gray)
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "Удалить")
                     }
-                    
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(if (isFormValid) MainPurple else Color.LightGray)
-                            .then(
-                                if (isFormValid) {
-                                    Modifier.clickable {
-                                        state?.first?.let {
-                                            viewModel.updateEntry(it.copy(
-                                                pointName = selectedPoint,
-                                                count = count.toInt(),
-                                                deliveryGroup = selectedGroup
-                                            ))
-                                            Toast.makeText(context, "Данные обновлены, итог смены пересчитан", Toast.LENGTH_SHORT).show()
-                                            onBack()
-                                        }
-                                    }
-                                } else Modifier
-                            ),
-                        contentAlignment = Alignment.Center
+                    FilledIconButton(
+                        onClick = onSave,
+                        enabled = isFormValid,
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Сохранить", tint = Color.White)
+                        Icon(Icons.Default.Check, contentDescription = "Сохранить")
                     }
                 }
             )
         },
-        containerColor = BackgroundLight
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -131,36 +147,26 @@ fun EditArchiveEntryScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val points = listOf("WB Палома", "WB ЕСЦ", "Ozon Палома", "Ozon ЕСЦ", "EMall", "FBO WB", "FBO Ozon")
-
-            val displayDate = remember(state) {
-                state?.second?.let {
-                    val dt = Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate()
-                    dt.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
-                } ?: ""
-            }
-
             // Поле Дата
             OutlinedTextField(
                 value = displayDate,
                 onValueChange = {},
                 label = { Text("Дата") },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = false,
+                readOnly = true,
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = Color.Black,
-                    disabledBorderColor = Color.LightGray,
-                    disabledLabelColor = Color.Gray
-                ),
-                shape = RoundedCornerShape(12.dp)
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
             )
 
             // Поле Количество
             OutlinedTextField(
                 value = count,
-                onValueChange = { if (it.all { char -> char.isDigit() }) count = it },
+                onValueChange = onCountChange,
                 label = { Text("Количество строк") },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -168,54 +174,55 @@ fun EditArchiveEntryScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                trailingIcon = {
-                    if (count.isNotEmpty()) {
-                        IconButton(onClick = { count = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear")
-                        }
-                    }
-                }
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
             )
 
             // Направления
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Направление", fontWeight = FontWeight.SemiBold, color = Color.Gray)
+                Text(
+                    "Направление",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     points.forEach { point ->
                         val isSelected = selectedPoint == point
-                        Surface(
-                            onClick = { selectedPoint = point },
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) MainPurple else Color.White,
-                            border = if (isSelected) null else BorderStroke(1.dp, Color.LightGray),
-                            tonalElevation = 2.dp
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (isSelected) {
-                                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                }
-                                Text(
-                                    text = point,
-                                    color = if (isSelected) Color.White else Color.Black,
-                                    fontSize = 14.sp
-                                )
-                            }
-                        }
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onPointSelect(point) },
+                            label = { Text(point) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                borderColor = MaterialTheme.colorScheme.outline,
+                                selectedBorderColor = Color.Transparent
+                            )
+                        )
                     }
                 }
             }
 
             // Номер отгрузки
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Отгрузка", fontWeight = FontWeight.SemiBold, color = Color.Gray)
+                Text(
+                    "Номер отгрузки",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     listOf(1, 2, 3).forEach { group ->
                         val isSelected = selectedGroup == group
@@ -223,14 +230,22 @@ fun EditArchiveEntryScreen(
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(CircleShape)
-                                .background(if (isSelected) MainPurple else Color(0xFFF2F2F7))
-                                .clickable { selectedGroup = group }
-                                .then(if (isSelected) Modifier else Modifier),
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primary 
+                                    else MaterialTheme.colorScheme.surface
+                                )
+                                .clickable { onGroupSelect(group) }
+                                .then(
+                                    if (isSelected) Modifier 
+                                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = group.toString(),
-                                color = if (isSelected) Color.White else Color.Black,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary 
+                                        else MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -245,8 +260,19 @@ fun EditArchiveEntryScreen(
 @Composable
 fun EditArchiveEntryScreenPreview() {
     PoopyrkaTheme {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Edit Screen Preview")
-        }
+        EditArchiveEntryContent(
+            count = "42",
+            onCountChange = {},
+            selectedPoint = "WB Палома",
+            onPointSelect = {},
+            selectedGroup = 1,
+            onGroupSelect = {},
+            displayDate = "12 мая 2024",
+            isFormValid = true,
+            focusRequester = remember { FocusRequester() },
+            onBack = {},
+            onDelete = {},
+            onSave = {}
+        )
     }
 }

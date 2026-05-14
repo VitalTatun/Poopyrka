@@ -129,7 +129,7 @@ fun DayDetailsContent(
         Text(
             text = "${date?.dayOfMonth ?: ""} ${date?.format(DateTimeFormatter.ofPattern("MMMM", Locale("ru"))) ?: ""}",
             fontSize = 18.sp,
-            color = MainPurple,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.SemiBold
         )
         Text(
@@ -144,7 +144,7 @@ fun DayDetailsContent(
             text = "${dayState.totalEarnings.toInt()} BYN",
             fontSize = 40.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = MainPurple
+            color = MaterialTheme.colorScheme.primary
         )
         Text(
             text = "${dayState.totalLines} поз.",
